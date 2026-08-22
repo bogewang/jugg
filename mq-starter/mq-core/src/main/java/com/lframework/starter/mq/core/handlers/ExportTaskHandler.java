@@ -100,7 +100,8 @@ public class ExportTaskHandler<P, D, M extends ExcelModel> {
         builder.finish();
       }
 
-      UploadDto uploadDto = UploadUtil.upload(xlsxFile,
+      UploadDto uploadDto = UploadUtil.uploadWithFileName(xlsxFile,
+          exportTask.getName() + ".xlsx",
           CollectionUtil.toList("export-task", exportTask.getCreateById()), true);
 
       // 将导出任务状态置为导出完成
