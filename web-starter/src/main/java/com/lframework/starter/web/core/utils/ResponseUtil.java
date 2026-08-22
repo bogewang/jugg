@@ -8,6 +8,8 @@ import com.lframework.starter.web.core.components.resp.InvokeResultBuilder;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -122,7 +124,8 @@ public class ResponseUtil {
     response.setContentType(contentType);
     response.setCharacterEncoding(StandardCharsets.UTF_8.name());
     response.setHeader("FileName", fileName);
-    response.setHeader("Content-Disposition", "attachment;filename=" + fileName);
+    response.setHeader("Content-Disposition",
+        "attachment;filename*=UTF-8''" + encodeFileName(fileName));
 
     OutputStream os = null;
     try {
@@ -130,6 +133,21 @@ public class ResponseUtil {
       os.write(FileUtil.readBytes(file));
     } catch (IOException e) {
       log.error(e.getMessage(), e);
+      throw new DefaultSysException(e.getMessage());
+    }
+  }
+
+  /**
+   * 按 RFC 5987 编码下载文件名，避免中文写入响应头后被容器替换为下划线。
+   *
+   * @param fileName 原始文件名
+   * @return 编码后的文件名
+   */
+  private static String encodeFileName(String fileName) {
+
+    try {
+      return URLEncoder.encode(fileName, StandardCharsets.UTF_8.name()).replace("+", "%20");
+    } catch (UnsupportedEncodingException e) {
       throw new DefaultSysException(e.getMessage());
     }
   }

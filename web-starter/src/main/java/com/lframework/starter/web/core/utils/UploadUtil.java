@@ -149,6 +149,28 @@ public class UploadUtil {
   }
 
   /**
+   * 使用指定文件名上传文件。
+   *
+   * @param file 上传文件，不能为null
+   * @param fileName 上传后的文件名，不能为null
+   * @param parentPathList 父路径列表，不能为null
+   * @param security 是否启用安全模式
+   * @return 上传结果DTO
+   */
+  public static UploadDto uploadWithFileName(File file, String fileName,
+      List<String> parentPathList, Boolean security) {
+
+    Assert.notNull(file);
+    Assert.notBlank(fileName);
+    try (InputStream is = FileUtil.getInputStream(file)) {
+      return upload(is, fileName, parentPathList, security, false);
+    } catch (IOException e) {
+      log.error(e.getMessage(), e);
+      throw new DefaultSysException(e.getMessage());
+    }
+  }
+
+  /**
    * 上传文件
    *
    * @return
@@ -156,15 +178,35 @@ public class UploadUtil {
   public static UploadDto upload(InputStream is, String fileName, List<String> parentPathList,
       Boolean security) {
 
+    return upload(is, fileName, parentPathList, security, true);
+  }
+
+  /**
+   * 上传文件。
+   *
+   * @param is 文件输入流，不能为null
+   * @param fileName 文件名，不能为null
+   * @param parentPathList 父路径列表，不能为null
+   * @param security 是否启用安全模式
+   * @param randomFileName 是否生成随机文件名
+   * @return 上传结果DTO
+   */
+  private static UploadDto upload(InputStream is, String fileName, List<String> parentPathList,
+      Boolean security, boolean randomFileName) {
+
     Assert.notNull(is);
+    Assert.notBlank(fileName);
     SysConfService sysConfService = ApplicationUtil.getBean(SysConfService.class);
     String key = security ? "security-upload.type" : "upload.type";
     String uploadTypeStr = sysConfService.findByKey(key, "LOCAL");
 
-    String suffix = FileUtil.getSuffix(fileName);
-    String randomFileName = IdUtil.getUUID();
-    String fullFileName =
-        randomFileName + (StringUtil.isEmpty(suffix) ? StringPool.EMPTY_STR : ("." + suffix));
+    String fullFileName = fileName;
+    if (randomFileName) {
+      String suffix = FileUtil.getSuffix(fileName);
+      String uuidFileName = IdUtil.getUUID();
+      fullFileName = uuidFileName + (StringUtil.isEmpty(suffix) ? StringPool.EMPTY_STR
+          : ("." + suffix));
+    }
 
     if (security) {
       SecurityUploadHandler uploadHandler = UploadHandlerFactory.getSecurityInstance(uploadTypeStr);
