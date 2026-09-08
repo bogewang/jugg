@@ -95,6 +95,8 @@ public class ExportTaskHandler<P, D, M extends ExcelModel> {
           if (!pageResult.isHasNext()) {
             break;
           }
+          // 继续查询下一页，避免重复导出当前页数据。
+          pageIndex++;
         }
       } finally {
         builder.finish();
